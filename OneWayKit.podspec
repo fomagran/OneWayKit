@@ -8,7 +8,7 @@
 
 Pod::Spec.new do |s|
   s.name             = 'OneWayKit'
-  s.version          = '1.0.0'
+  s.version          = '1.0.1'
   s.summary          = 'OneWayKit is a lightweight unidirectional data flow framework for simplifying state management in iOS applications. It ensures predictable state transitions with centralized state management and consistent action dispatching. Optimized for Swift, OneWayKit promotes maintainable and scalable architecture.'
 
 # This description is used to generate tags and improve search results.
@@ -26,7 +26,7 @@ TODO: Add long description of the pod here.
   s.author           = { 'fomagran' => 'fomagran@icloud.com' }
   s.source           = { :git => 'https://github.com/fomagran/OneWayKit.git', :tag => s.version.to_s }
 
-  s.ios.deployment_target = '10.0'
+  s.ios.deployment_target = '13.0'
 
   s.source_files = 'OneWayKit/Classes/**/*'
   
