@@ -9,7 +9,7 @@ import Foundation
 
 extension FeatureAction {
     public static func cancel(for action: FeatureAction) -> any CancelAction {
-        return FeatureCancelAction(actionToCancel: nil)
+        return FeatureCancelAction(actionToCancel: action)
     }
 }
 
