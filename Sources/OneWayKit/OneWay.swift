@@ -50,11 +50,6 @@ extension OneWay: OneWayHandlable {
         queue.sync { [weak self] in
             guard let self else{ return }
             
-            if let action = action as? any CancelAction, let actionToCancel = action.actionToCancel {
-                self.cancel(actionToCancel)
-                return
-            }
-            
             self.action.value = action
             self.update(subject.value, action)
         }
@@ -71,8 +66,14 @@ extension OneWay: OneWayHandlable {
                     self.subscriptions.removeValue(forKey: self.key(action)) }
                 )
                 .sink { [weak self] in
-                    guard let action = $0 as? Feature.Action else { return }
-                    self?.send(action)
+                    if let action = $0 as? Feature.Action {
+                        self?.send(action)
+                    } else if
+                        let action = $0 as? any CancelAction,
+                        let actionToCancel = action.actionToCancel {
+                        self?.cancel(actionToCancel)
+                    }
+                    
                 }
                 .store(in: &subscriptions, key: key(action))
         }
