@@ -20,7 +20,7 @@ public protocol OneWayHandlable {
     func transform<Action>(id: String, action: CurrentValueSubject<Action?, Never>, transfer: @escaping (Action) -> Void)
 }
 
-public final class OneWay<Feature: Featurable> {
+public final class OneWay<Feature: Featurable>: ObservableObject {
     
     private let queue = DispatchQueue(label: "onewaykit.\(Feature.id)", qos: .userInitiated)
     internal var subscriptions: [String: AnyCancellable] = [:]
