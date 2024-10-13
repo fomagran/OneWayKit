@@ -7,14 +7,14 @@
 
 import Combine
 
-public protocol FeatureState {}
+public protocol FeatureState: Equatable {}
 
 public protocol FeatureAction {
     static func cancel(for action: FeatureAction) -> CancelAction
 }
 
 public protocol AsyncAction {
-    func send(_ action: FeatureAction, currentState: FeatureState) -> AnyPublisher<FeatureAction, Never>
+    func send(_ action: FeatureAction, currentState: any FeatureState) -> AnyPublisher<FeatureAction, Never>
 }
 
 public protocol Featurable {

@@ -8,11 +8,10 @@
 import Combine
 import Foundation
 
-public protocol OneWayHandlable {
+protocol OneWayHandlable {
     associatedtype State: FeatureState
     associatedtype Action: FeatureAction
     
-    var subject: CurrentValueSubject<State, Never> { get }
     var state: State { get }
     
     func send(_ action: Action)
@@ -20,16 +19,17 @@ public protocol OneWayHandlable {
     func transform<Action>(id: String, action: CurrentValueSubject<Action?, Never>, transfer: @escaping (Action) -> Void)
 }
 
-public final class OneWay<Feature: Featurable>: ObservableObject {
+public final class OneWay<Feature: Featurable> {
     
     private let queue = DispatchQueue(label: "onewaykit.\(Feature.id)", qos: .userInitiated)
     internal var subscriptions: [String: AnyCancellable] = [:]
     
-    public let subject: CurrentValueSubject<Feature.State, Never>
+    private let subject: CurrentValueSubject<Feature.State, Never>
     public let action = CurrentValueSubject<Feature.Action?, Never>(nil)
     
     public init(initialState: Feature.State) {
         self.subject = CurrentValueSubject<Feature.State, Never>(initialState)
+        self.observeSubject()
     }
     
     public var state: Feature.State {
@@ -92,4 +92,18 @@ extension OneWay: OneWayHandlable {
         .store(in: &subscriptions, key: id)
     }
     
+}
+
+
+// MARK: - For SwiftUI
+
+extension OneWay: ObservableObject {
+    
+    private func observeSubject() {
+        subject
+            .sink(receiveValue: { [weak self] newState in
+                self?.objectWillChange.send()
+            })
+            .store(in: &subscriptions, key: "subject")
+    }
 }
