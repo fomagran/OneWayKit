@@ -27,6 +27,8 @@ public final class OneWay<Feature: Featurable> {
     private let subject: CurrentValueSubject<Feature.State, Never>
     public let action = CurrentValueSubject<Feature.Action?, Never>(nil)
     
+    private var tempState: Feature.State?
+    
     public init(initialState: Feature.State) {
         self.subject = CurrentValueSubject<Feature.State, Never>(initialState)
         self.observeSubject()
@@ -56,7 +58,13 @@ extension OneWay: OneWayHandlable {
     }
     
     private func update(_ currentState: Feature.State, _ action: Feature.Action) {
-        let newState = Feature.updater(currentState, action)
+        let newState = if let tempState {
+            Feature.updater(tempState, action)
+        } else {
+            Feature.updater(currentState, action)
+        }
+        
+        tempState = newState
         
         Feature.asyncActions?.forEach { asyncAction in
             asyncAction.send(action, currentState: currentState)
@@ -78,7 +86,8 @@ extension OneWay: OneWayHandlable {
                 .store(in: &subscriptions, key: key(action))
         }
         
-        Task { @MainActor [weak self] in
+        DispatchQueue.main.async { [weak self] in
+            self?.tempState = nil
             self?.subject.value = newState
         }
     }
