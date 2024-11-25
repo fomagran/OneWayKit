@@ -5,14 +5,15 @@
 //  Created by Fomagran on 10/12/24.
 //
 
-import Combine
 import Foundation
+import Combine
 
 protocol OneWayHandlable {
     associatedtype State: FeatureState
     associatedtype Action: FeatureAction
     
     var state: State { get }
+    var subject: CurrentValueSubject<State, Never> { get }
     
     func send(_ action: Action)
     func cancel(_ action: FeatureAction)
@@ -24,13 +25,14 @@ public final class OneWay<Feature: Featurable> {
     private let queue = DispatchQueue(label: "onewaykit.\(Feature.id)", qos: .userInitiated)
     internal var subscriptions: [String: AnyCancellable] = [:]
     
-    private let subject: CurrentValueSubject<Feature.State, Never>
+    internal let subject: CurrentValueSubject<Feature.State, Never>
     public let action = CurrentValueSubject<Feature.Action?, Never>(nil)
     
-    private var tempState: Feature.State?
+    private var newState: Feature.State?
     
     public init(initialState: Feature.State) {
         self.subject = CurrentValueSubject<Feature.State, Never>(initialState)
+        
         self.observeSubject()
     }
     
@@ -58,13 +60,11 @@ extension OneWay: OneWayHandlable {
     }
     
     private func update(_ currentState: Feature.State, _ action: Feature.Action) {
-        let newState = if let tempState {
-            Feature.updater(tempState, action)
+        newState = if let newState {
+            Feature.updater(newState, action)
         } else {
             Feature.updater(currentState, action)
         }
-        
-        tempState = newState
         
         Feature.asyncActions?.forEach { asyncAction in
             asyncAction.send(action, currentState: currentState)
@@ -87,8 +87,11 @@ extension OneWay: OneWayHandlable {
         }
         
         DispatchQueue.main.async { [weak self] in
-            self?.tempState = nil
+            guard let newState = self?.newState else {
+                return
+            }
             self?.subject.value = newState
+            self?.newState = nil
         }
     }
     
