@@ -7,7 +7,9 @@
 
 import Combine
 
-public protocol FeatureState: Equatable {}
+public protocol FeatureState: Equatable {
+    var shouldLog: Bool { get }
+}
 
 public protocol FeatureAction {
     static func cancel(for action: FeatureAction) -> CancelAction

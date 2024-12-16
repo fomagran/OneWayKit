@@ -1,5 +1,5 @@
 //
-//  OneWay+Global.swift
+//  GlobalOneWay.swift
 //  
 //
 //  Created by 안영훈 on 11/23/24.
@@ -7,9 +7,19 @@
 import Foundation
 import Combine
 
+protocol GlobalHandlable {
+    associatedtype State: FeatureState
+    associatedtype Action: FeatureAction
+    
+    var state: State { get }
+    var subject: CurrentValueSubject<State, Never> { get }
+    
+    func send(_ action: Action)
+}
+
 public final class GlobalOneWay: NSObject {
 
-    private static var globalOneWays: [String: any OneWayHandlable] = [:]
+    private static var globalOneWays: [String: any GlobalHandlable] = [:]
     
     public static func statePublisher<Feature: Featurable>(feature: Feature.Type) -> AnyPublisher<Feature.State, Never> {
         guard let oneWay = globalOneWays[Feature.id] as? OneWay<Feature> else {
@@ -30,7 +40,6 @@ public final class GlobalOneWay: NSObject {
     }
     
     public static func send<Feature: Featurable>(feature: Feature.Type, _ action: Feature.Action) {
-        
         guard let oneWay = globalOneWays[Feature.id] as? OneWay<Feature> else {
             return
         }
@@ -39,10 +48,7 @@ public final class GlobalOneWay: NSObject {
     }
     
     public static func registerState<Feature: Featurable>(feature: Feature.Type, initialState: Feature.State) {
-        guard globalOneWays[Feature.id] == nil else {
-            return
-        }
-        
+        guard globalOneWays[Feature.id] == nil else { return }
         globalOneWays[Feature.id] = OneWay<Feature>(initialState: initialState)
     }
 }

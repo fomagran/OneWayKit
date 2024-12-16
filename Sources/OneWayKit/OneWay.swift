@@ -8,19 +8,7 @@
 import Foundation
 import Combine
 
-protocol OneWayHandlable {
-    associatedtype State: FeatureState
-    associatedtype Action: FeatureAction
-    
-    var state: State { get }
-    var subject: CurrentValueSubject<State, Never> { get }
-    
-    func send(_ action: Action)
-    func cancel(_ action: FeatureAction)
-    func transform<Action>(id: String, action: CurrentValueSubject<Action?, Never>, transfer: @escaping (Action) -> Void)
-}
-
-public final class OneWay<Feature: Featurable> {
+public final class OneWay<Feature: Featurable>: GlobalHandlable {
     
     private let queue = DispatchQueue(label: "onewaykit.\(Feature.id)", qos: .userInitiated)
     internal var subscriptions: [String: AnyCancellable] = [:]
@@ -29,10 +17,14 @@ public final class OneWay<Feature: Featurable> {
     public let action = CurrentValueSubject<Feature.Action?, Never>(nil)
     
     private var newState: Feature.State?
+    private var contextName: String?
     
-    public init(initialState: Feature.State) {
+    public init(initialState: Feature.State, context: AnyClass? = nil) {
         self.subject = CurrentValueSubject<Feature.State, Never>(initialState)
-        
+        if let context {
+            self.contextName = "\(context)"
+        }
+      
         self.observeSubject()
     }
     
@@ -43,17 +35,17 @@ public final class OneWay<Feature: Featurable> {
     public var statePublisher: AnyPublisher<Feature.State, Never> {
         subject.eraseToAnyPublisher()
     }
+    
 }
 
 
-// MARK: - OneWayHandlable
+// MARK: - Helpers
 
-extension OneWay: OneWayHandlable {
+extension OneWay {
     
     public func send(_ action: Feature.Action) {
         queue.sync { [weak self] in
-            guard let self else{ return }
-            
+            guard let self else { return }
             self.action.value = action
             self.update(subject.value, action)
         }
@@ -87,16 +79,17 @@ extension OneWay: OneWayHandlable {
         }
         
         DispatchQueue.main.async { [weak self] in
-            guard let newState = self?.newState else {
-                return
-            }
-            self?.subject.value = newState
-            self?.newState = nil
+            guard let self, let newState = self.newState else { return }
+            
+            Logger.shared.log(shouldLog: state.shouldLog, contextName: contextName, action: action, old: state, new: newState)
+            
+            self.subject.value = newState
+            self.newState = nil
+            
         }
     }
     
     public func transform<ChildAction>(id: String, action: CurrentValueSubject<ChildAction?, Never>, transfer: @escaping (ChildAction) -> Void) {
-
         action.sink { action in
             guard let action else { return }
             transfer(action)
@@ -118,4 +111,14 @@ extension OneWay: ObservableObject {
             })
             .store(in: &subscriptions, key: "subject")
     }
+    
+}
+
+
+// MARK: - Logger
+
+extension OneWay {
+    
+
+    
 }
