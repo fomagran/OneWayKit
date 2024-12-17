@@ -8,7 +8,7 @@
 import Foundation
 import Combine
 
-public final class OneWay<Feature: Featurable>: GlobalHandlable {
+public final class OneWay<Feature: ViewFeature>: GlobalHandlable {
     
     private let queue = DispatchQueue(label: "onewaykit.\(Feature.id)", qos: .userInitiated)
     internal var subscriptions: [String: AnyCancellable] = [:]
@@ -17,6 +17,8 @@ public final class OneWay<Feature: Featurable>: GlobalHandlable {
     public let action = CurrentValueSubject<Feature.Action?, Never>(nil)
     
     private var newState: Feature.State?
+    
+    public let tracer = Tracer()
     private var contextName: String?
     
     public init(initialState: Feature.State, context: AnyClass? = nil) {
@@ -58,8 +60,8 @@ extension OneWay {
             Feature.updater(currentState, action)
         }
         
-        Feature.asyncActions?.forEach { asyncAction in
-            asyncAction.send(action, currentState: currentState)
+        Feature.middlewares?.forEach { middleware in
+            middleware.send(action, currentState: currentState)
                 .receive(on: RunLoop.main)
                 .handleEvents(receiveCompletion: { [weak self] _ in
                     guard let self else { return }
@@ -81,7 +83,13 @@ extension OneWay {
         DispatchQueue.main.async { [weak self] in
             guard let self, let newState = self.newState else { return }
             
-            Logger.shared.log(shouldLog: state.shouldLog, contextName: contextName, action: action, old: state, new: newState)
+            tracer.trace(
+                shouldLog: state.shouldLog,
+                contextName: contextName,
+                action: action,
+                old: state,
+                new: newState
+            )
             
             self.subject.value = newState
             self.newState = nil
@@ -111,14 +119,5 @@ extension OneWay: ObservableObject {
             })
             .store(in: &subscriptions, key: "subject")
     }
-    
-}
-
-
-// MARK: - Logger
-
-extension OneWay {
-    
-
     
 }

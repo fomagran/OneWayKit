@@ -7,31 +7,32 @@
 
 import Foundation
 
-public final class Logger: NSObject {
+public final class Tracer: NSObject {
     
-    public static let shared = Logger()
+    @Published public var event: String?
     
-    public func log(
+    public func trace(
         shouldLog: Bool,
         contextName: String? = nil,
-        action: FeatureAction,
-        old: any FeatureState,
-        new: any FeatureState
+        action: ViewAction,
+        old: any ViewState,
+        new: any ViewState
     ) {
         guard shouldLog else { return }
         
-        print("""
+        let event = """
         -----------------------------
         [Context: \(contextName ?? "Unknown")]
         Action Triggered: \(action)
         Changed State:
         \(compareStructs(old, new))
         -----------------------------
-        """)
+        """
         
+        self.event = event
     }
     
-    private func compareStructs(_ old: any FeatureState, _ new: any FeatureState) -> String {
+    private func compareStructs(_ old: any ViewState, _ new: any ViewState) -> String {
         var differences: String = ""
         
         let oldMirror = Mirror(reflecting: old)

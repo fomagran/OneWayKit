@@ -8,8 +8,8 @@ import Foundation
 import Combine
 
 protocol GlobalHandlable {
-    associatedtype State: FeatureState
-    associatedtype Action: FeatureAction
+    associatedtype State: ViewState
+    associatedtype Action: ViewAction
     
     var state: State { get }
     var subject: CurrentValueSubject<State, Never> { get }
@@ -21,7 +21,7 @@ public final class GlobalOneWay: NSObject {
 
     private static var globalOneWays: [String: any GlobalHandlable] = [:]
     
-    public static func statePublisher<Feature: Featurable>(feature: Feature.Type) -> AnyPublisher<Feature.State, Never> {
+    public static func statePublisher<Feature: ViewFeature>(feature: Feature.Type) -> AnyPublisher<Feature.State, Never> {
         guard let oneWay = globalOneWays[Feature.id] as? OneWay<Feature> else {
             print("The initial state for the GlobalType \(feature) has not been registered.")
             return Empty().eraseToAnyPublisher()
@@ -30,7 +30,7 @@ public final class GlobalOneWay: NSObject {
         return oneWay.subject.eraseToAnyPublisher()
     }
     
-    public static func state<Feature: Featurable>(feature: Feature.Type) -> CurrentValueSubject<Feature.State, Never>? {
+    public static func state<Feature: ViewFeature>(feature: Feature.Type) -> CurrentValueSubject<Feature.State, Never>? {
         guard let oneWay = globalOneWays[Feature.id] as? OneWay<Feature> else {
             print("The initial state for the GlobalType \(feature) has not been registered.")
             return nil
@@ -39,7 +39,7 @@ public final class GlobalOneWay: NSObject {
         return oneWay.subject
     }
     
-    public static func send<Feature: Featurable>(feature: Feature.Type, _ action: Feature.Action) {
+    public static func send<Feature: ViewFeature>(feature: Feature.Type, _ action: Feature.Action) {
         guard let oneWay = globalOneWays[Feature.id] as? OneWay<Feature> else {
             return
         }
@@ -47,7 +47,7 @@ public final class GlobalOneWay: NSObject {
         oneWay.send(action)
     }
     
-    public static func registerState<Feature: Featurable>(feature: Feature.Type, initialState: Feature.State) {
+    public static func registerState<Feature: ViewFeature>(feature: Feature.Type, initialState: Feature.State) {
         guard globalOneWays[Feature.id] == nil else { return }
         globalOneWays[Feature.id] = OneWay<Feature>(initialState: initialState)
     }

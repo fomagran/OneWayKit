@@ -8,7 +8,7 @@
 import Combine
 
 extension OneWay {
-    func key(_ action: FeatureAction) -> String {
+    func key(_ action: ViewAction) -> String {
         return "\(Feature.id) + \(action)"
     }
 }

@@ -7,25 +7,25 @@
 
 import Foundation
 
-extension FeatureAction {
-    public static func cancel(for action: FeatureAction) -> any CancelAction {
+extension ViewAction {
+    public static func cancel(for action: ViewAction) -> any CancelAction {
         return FeatureCancelAction(actionToCancel: action)
     }
 }
 
 public struct FeatureCancelAction: CancelAction {
     
-    public typealias CancellableAction = FeatureAction
+    public typealias CancellableAction = ViewAction
     
     public var actionToCancel: (any CancellableAction)?
 }
 
-public protocol CancelAction: FeatureAction {
-    var actionToCancel: FeatureAction? { get }
+public protocol CancelAction: ViewAction {
+    var actionToCancel: ViewAction? { get }
 }
 
 extension OneWay {
-    public func cancel(_ action: FeatureAction) {
+    public func cancel(_ action: ViewAction) {
         subscriptions[key(action)]?.cancel()
     }
 }
