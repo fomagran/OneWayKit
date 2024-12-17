@@ -20,8 +20,6 @@ public protocol Middleware {
 }
 
 public protocol ViewFeature {
-    static var id: String { get }
-    
     associatedtype State: ViewState
     associatedtype Action: ViewAction
     typealias Updater = (State, Action) -> State

@@ -10,7 +10,7 @@ import Combine
 
 public final class OneWay<Feature: ViewFeature>: GlobalHandlable {
     
-    private let queue = DispatchQueue(label: "onewaykit.\(Feature.id)", qos: .userInitiated)
+    private let queue = DispatchQueue(label: "onewaykit.\(Feature.self)", qos: .userInitiated)
     internal var subscriptions: [String: AnyCancellable] = [:]
     
     internal let subject: CurrentValueSubject<Feature.State, Never>
@@ -19,14 +19,11 @@ public final class OneWay<Feature: ViewFeature>: GlobalHandlable {
     private var newState: Feature.State?
     
     public let tracer = Tracer()
-    private var contextName: String?
+    private let context: AnyClass?
     
     public init(initialState: Feature.State, context: AnyClass? = nil) {
         self.subject = CurrentValueSubject<Feature.State, Never>(initialState)
-        if let context {
-            self.contextName = "\(context)"
-        }
-      
+        self.context = context
         self.observeSubject()
     }
     
@@ -65,7 +62,7 @@ extension OneWay {
                 .receive(on: RunLoop.main)
                 .handleEvents(receiveCompletion: { [weak self] _ in
                     guard let self else { return }
-                    self.subscriptions.removeValue(forKey: self.key(action)) }
+                    self.subscriptions.removeValue(forKey: "\(middleware) \(action)") }
                 )
                 .sink { [weak self] in
                     if let action = $0 as? Feature.Action {
@@ -73,11 +70,10 @@ extension OneWay {
                     } else if
                         let action = $0 as? any CancelAction,
                         let actionToCancel = action.actionToCancel {
-                        self?.cancel(actionToCancel)
+                        self?.cancel(actionToCancel, key: "\(middleware) \(actionToCancel)")
                     }
-                    
                 }
-                .store(in: &subscriptions, key: key(action))
+                .store(in: &subscriptions, key: "\(middleware) \(action)")
         }
         
         DispatchQueue.main.async { [weak self] in
@@ -85,7 +81,7 @@ extension OneWay {
             
             tracer.trace(
                 shouldLog: state.shouldLog,
-                contextName: contextName,
+                context: context,
                 action: action,
                 old: state,
                 new: newState
@@ -93,16 +89,7 @@ extension OneWay {
             
             self.subject.value = newState
             self.newState = nil
-            
         }
-    }
-    
-    public func transform<ChildAction>(id: String, action: CurrentValueSubject<ChildAction?, Never>, transfer: @escaping (ChildAction) -> Void) {
-        action.sink { action in
-            guard let action else { return }
-            transfer(action)
-        }
-        .store(in: &subscriptions, key: id)
     }
     
 }
@@ -117,7 +104,22 @@ extension OneWay: ObservableObject {
             .sink(receiveValue: { [weak self] newState in
                 self?.objectWillChange.send()
             })
-            .store(in: &subscriptions, key: "subject")
+            .store(in: &subscriptions)
+    }
+    
+}
+
+
+// MARK: - Subscription
+
+extension AnyCancellable {
+    
+    func store(in dictionary: inout [String: AnyCancellable], key: String? = nil) {
+        if let key {
+            dictionary[key] = self
+        } else {
+            dictionary[UUID().uuidString] = self
+        }
     }
     
 }

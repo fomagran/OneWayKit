@@ -25,7 +25,7 @@ public protocol CancelAction: ViewAction {
 }
 
 extension OneWay {
-    public func cancel(_ action: ViewAction) {
-        subscriptions[key(action)]?.cancel()
+    public func cancel(_ action: ViewAction, key: String) {
+        subscriptions[key]?.cancel()
     }
 }

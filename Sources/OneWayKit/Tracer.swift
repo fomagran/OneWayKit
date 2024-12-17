@@ -13,20 +13,25 @@ public final class Tracer: NSObject {
     
     public func trace(
         shouldLog: Bool,
-        contextName: String? = nil,
+        context: AnyClass? = nil,
         action: ViewAction,
         old: any ViewState,
         new: any ViewState
     ) {
         guard shouldLog else { return }
         
+        
+        let contextName: String = if let context {
+            String(describing: context.self)
+        } else {
+            "Unknown"
+        }
+        
         let event = """
-        -----------------------------
-        [Context: \(contextName ?? "Unknown")]
+        [Context: \(contextName)]
         Action Triggered: \(action)
         Changed State:
         \(compareStructs(old, new))
-        -----------------------------
         """
         
         self.event = event
@@ -49,7 +54,7 @@ public final class Tracer: NSObject {
             }
         }
         
-        return differences.isEmpty ? "아무것도 변하지 않았습니다." : differences
+        return differences.isEmpty ? "There are no changes." : differences
     }
     
     private func isDifferent(_ lhs: Any, _ rhs: Any) -> Bool {

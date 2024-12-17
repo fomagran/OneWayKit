@@ -22,7 +22,7 @@ public final class GlobalOneWay: NSObject {
     private static var globalOneWays: [String: any GlobalHandlable] = [:]
     
     public static func statePublisher<Feature: ViewFeature>(feature: Feature.Type) -> AnyPublisher<Feature.State, Never> {
-        guard let oneWay = globalOneWays[Feature.id] as? OneWay<Feature> else {
+        guard let oneWay = globalOneWays[String(describing: Feature.self)] as? OneWay<Feature> else {
             print("The initial state for the GlobalType \(feature) has not been registered.")
             return Empty().eraseToAnyPublisher()
         }
@@ -31,7 +31,7 @@ public final class GlobalOneWay: NSObject {
     }
     
     public static func state<Feature: ViewFeature>(feature: Feature.Type) -> CurrentValueSubject<Feature.State, Never>? {
-        guard let oneWay = globalOneWays[Feature.id] as? OneWay<Feature> else {
+        guard let oneWay = globalOneWays[String(describing: Feature.self)] as? OneWay<Feature> else {
             print("The initial state for the GlobalType \(feature) has not been registered.")
             return nil
         }
@@ -40,7 +40,7 @@ public final class GlobalOneWay: NSObject {
     }
     
     public static func send<Feature: ViewFeature>(feature: Feature.Type, _ action: Feature.Action) {
-        guard let oneWay = globalOneWays[Feature.id] as? OneWay<Feature> else {
+        guard let oneWay = globalOneWays[String(describing: Feature.self)] as? OneWay<Feature> else {
             return
         }
         
@@ -48,7 +48,7 @@ public final class GlobalOneWay: NSObject {
     }
     
     public static func registerState<Feature: ViewFeature>(feature: Feature.Type, initialState: Feature.State) {
-        guard globalOneWays[Feature.id] == nil else { return }
-        globalOneWays[Feature.id] = OneWay<Feature>(initialState: initialState)
+        guard globalOneWays[String(describing: Feature.self)] == nil else { return }
+        globalOneWays[String(describing: Feature.self)] = OneWay<Feature>(initialState: initialState)
     }
 }
