@@ -14,7 +14,7 @@ protocol GlobalHandlable {
     var state: State { get }
     var subject: CurrentValueSubject<State, Never> { get }
     
-    func send(_ action: Action)
+    func send(_ action: Action, shouldTrace: Bool)
 }
 
 public final class GlobalOneWay: NSObject {

@@ -7,9 +7,7 @@
 
 import Combine
 
-public protocol ViewState: Equatable {
-    var shouldLog: Bool { get }
-}
+public protocol ViewState: Equatable {}
 
 public protocol ViewAction {
     static func cancel(for action: ViewAction) -> CancelAction

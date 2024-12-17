@@ -12,14 +12,13 @@ public final class Tracer: NSObject {
     @Published public var event: String?
     
     public func trace(
-        shouldLog: Bool,
+        shouldTrace: Bool,
         context: AnyClass? = nil,
         action: ViewAction,
         old: any ViewState,
         new: any ViewState
     ) {
-        guard shouldLog else { return }
-        
+        guard shouldTrace else { return }
         
         let contextName: String = if let context {
             String(describing: context.self)

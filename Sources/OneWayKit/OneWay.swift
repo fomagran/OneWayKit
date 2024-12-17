@@ -42,15 +42,15 @@ public final class OneWay<Feature: ViewFeature>: GlobalHandlable {
 
 extension OneWay {
     
-    public func send(_ action: Feature.Action) {
+    public func send(_ action: Feature.Action, shouldTrace: Bool = false) {
         queue.sync { [weak self] in
             guard let self else { return }
             self.action.value = action
-            self.update(subject.value, action)
+            self.update(subject.value, action, shouldTrace)
         }
     }
     
-    private func update(_ currentState: Feature.State, _ action: Feature.Action) {
+    private func update(_ currentState: Feature.State, _ action: Feature.Action, _ shouldTrace: Bool) {
         newState = if let newState {
             Feature.updater(newState, action)
         } else {
@@ -66,7 +66,7 @@ extension OneWay {
                 )
                 .sink { [weak self] in
                     if let action = $0 as? Feature.Action {
-                        self?.send(action)
+                        self?.send(action, shouldTrace: shouldTrace)
                     } else if
                         let action = $0 as? any CancelAction,
                         let actionToCancel = action.actionToCancel {
@@ -80,7 +80,7 @@ extension OneWay {
             guard let self, let newState = self.newState else { return }
             
             tracer.trace(
-                shouldLog: state.shouldLog,
+                shouldTrace: shouldTrace,
                 context: context,
                 action: action,
                 old: state,
