@@ -8,40 +8,70 @@
 import Foundation
 import Combine
 
+/// A generic state management system designed for unidirectional data flow,
+/// intended to work seamlessly with SwiftUI and provide robust state handling.
+///
+/// `OneWay` manages state (`Feature.State`) and actions (`Feature.Action`) in a thread-safe
+/// manner, enabling middleware and tracing support. It conforms to `ObservableObject` for
+/// SwiftUI integration.
+///
+/// - Note: This is a customizable, reusable framework component that follows
+///         the principles of unidirectional data flow.
+
 public final class OneWay<Feature: ViewFeature>: GlobalHandlable {
     
+    /// A private queue to handle all state updates serially.
     private let queue = DispatchQueue(label: "onewaykit.\(Feature.self)", qos: .userInitiated)
+    
+    /// A dictionary to store subscriptions for Combine publishers.
     internal var subscriptions: [String: AnyCancellable] = [:]
     
+    /// The core subject managing the current state.
     internal let subject: CurrentValueSubject<Feature.State, Never>
+    
+    /// A subject to handle the current action being processed.
     public let action = CurrentValueSubject<Feature.Action?, Never>(nil)
     
+    /// A temporary holder for the next computed state before applying it.
     private var newState: Feature.State?
     
+    /// A tracer to log state transitions and actions, aiding in debugging and analytics.
     public let tracer = Tracer()
+    
+    /// Contextual information for tracing, typically the calling class.
     private let context: AnyClass?
     
+    /// Initializes a `OneWay` instance with an initial state and optional context.
+    ///
+    /// - Parameters:
+    ///   - initialState: The initial state of the feature.
+    ///   - context: An optional context, such as the calling class, for tracing.
     public init(initialState: Feature.State, context: AnyClass? = nil) {
         self.subject = CurrentValueSubject<Feature.State, Never>(initialState)
         self.context = context
         self.observeSubject()
     }
     
+    /// The current state of the feature.
     public var state: Feature.State {
         subject.value
     }
     
+    /// A publisher that emits the current state whenever it changes.
     public var statePublisher: AnyPublisher<Feature.State, Never> {
         subject.eraseToAnyPublisher()
     }
-    
 }
-
 
 // MARK: - Helpers
 
 extension OneWay {
     
+    /// Sends an action to the `OneWay` system, initiating a state update and optional tracing.
+    ///
+    /// - Parameters:
+    ///   - action: The action to process.
+    ///   - shouldTrace: Whether to enable tracing for this action. Defaults to `false`.
     public func send(_ action: Feature.Action, shouldTrace: Bool = false) {
         queue.sync { [weak self] in
             guard let self else { return }
@@ -50,13 +80,21 @@ extension OneWay {
         }
     }
     
+    /// Handles state updates and middleware execution for a given action.
+    ///
+    /// - Parameters:
+    ///   - currentState: The current state before applying the action.
+    ///   - action: The action to process.
+    ///   - shouldTrace: Whether to enable tracing for this action.
     private func update(_ currentState: Feature.State, _ action: Feature.Action, _ shouldTrace: Bool) {
+        // Compute the new state using the feature's updater.
         newState = if let newState {
             Feature.updater(newState, action)
         } else {
             Feature.updater(currentState, action)
         }
         
+        // Process middlewares, if any, for additional side effects.
         Feature.middlewares?.forEach { middleware in
             middleware.send(action, currentState: currentState)
                 .receive(on: RunLoop.main)
@@ -76,6 +114,7 @@ extension OneWay {
                 .store(in: &subscriptions, key: "\(middleware) \(action)")
         }
         
+        // Apply the new state and perform tracing on the main queue.
         DispatchQueue.main.async { [weak self] in
             guard let self, let newState = self.newState else { return }
             
@@ -91,14 +130,13 @@ extension OneWay {
             self.newState = nil
         }
     }
-    
 }
-
 
 // MARK: - For SwiftUI
 
 extension OneWay: ObservableObject {
     
+    /// Observes changes to the state subject and notifies SwiftUI when updates occur.
     private func observeSubject() {
         subject
             .sink(receiveValue: { [weak self] newState in
@@ -106,20 +144,18 @@ extension OneWay: ObservableObject {
             })
             .store(in: &subscriptions)
     }
-    
 }
-
 
 // MARK: - Subscription
 
 extension AnyCancellable {
     
+    /// Stores a subscription in a dictionary with an optional key.
+    ///
+    /// - Parameters:
+    ///   - dictionary: The dictionary to store the subscription.
+    ///   - key: An optional key to identify the subscription. If not provided, a UUID is used.
     func store(in dictionary: inout [String: AnyCancellable], key: String? = nil) {
-        if let key {
-            dictionary[key] = self
-        } else {
-            dictionary[UUID().uuidString] = self
-        }
+        dictionary[key ?? UUID().uuidString] = self
     }
-    
 }
