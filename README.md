@@ -1,6 +1,13 @@
-<img width="280" alt="OneWay" src="https://github.com/user-attachments/assets/8346bb30-d959-40e4-bacb-3a69f2d62815" />
+<img width="280" alt="OneWay" src="https://github.com/user-attachments/assets/8346bb30-d959-40e4-bacb-3a69f2d62815" />    
 
 # OneWayKit ♻️   
+
+<p align="center">
+    <img alt="release" src="https://img.shields.io/github/v/release/fomagran/OneWayKit?logo=swift&color=orange">
+    <img alt="license" src="https://img.shields.io/badge/Swift-5.9-orange.svg">
+    <img alt="license" src="https://img.shields.io/badge/iOS-13.0-blue.svg">
+    <img alt="license" src="https://img.shields.io/badge/license-MIT-purple.svg">
+</p>
 
 **OneWayKit** is a reactive unidirectional architecture library built with Combine.
 It allows you to update the state based on user actions and reflect those changes in the view seamlessly.
