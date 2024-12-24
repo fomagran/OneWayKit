@@ -9,9 +9,13 @@ The library is designed to be simple and easy to integrate into any feature of y
 ## Table of Contents
 
 - [Basic Usage](#basic-usage)
-- [Key Feature](#key-feature)
-- [Example](#example)
+- [Key Features](#key-features)
+    1. [Tracer](#tracer)
+    2. [Globall](#global)
+- [Examples](#examples)
 - [Installation](#installation)
+- [References](#references)
+- [Author](#author)
 - [License](#license)
 
 ## Basic Usage
@@ -152,37 +156,118 @@ final class TimerViewController: UIViewController {
         oneway.send(.down)
     }
 ```
-# Examples
+
+## Key Features
+
+1. #### Tracer
+
+When creating onewaykit, set the context first.
+```swift
+    private lazy var oneway = OneWay<TracerFeature>(
+        initialState:
+            .init(
+                position: .init(x: view.center.x, y: view.center.y),
+                size: .init(width: 100, height: 100)
+            ),
+        context: TracerViewController.self
+    )
+```
+
+If you want to track actions and state changes, you can use shouldTrace to trace them when sending actions, as shown below:
+```swift
+    @objc private func tapLeftButton() {
+        oneway.send(.left, shouldTrace: true)
+    }
+```
+
+By setting shouldTrace to true, you can observe events that capture the context, action, and how the state changes as a result, as shown below:   
+
+<img width="299" alt="스크린샷 2024-12-24 오후 11 31 19" src="https://github.com/user-attachments/assets/6c3580fa-8435-44cf-9f7e-13e90521d181" />
+
+2. #### Global
+
+First, register the ViewFeature to be used globally and set the initial state.
+
+```swift
+   GlobalOneWay.registerState(feature: GlobalFeature.self, initialState: .init())
+```
+Then, you can subscribe to and use the state of the desired global feature.
+
+```swift
+        GlobalOneWay.state(feature: GlobalFeature.self)?
+            .map { $0.backgroundColor }
+            .sink { [weak self] in
+                self?.titleLabel.backgroundColor = $0
+            }
+            .store(in: &cancellables)
+```
+
+You can also send actions to the global feature, of course.
+```swift
+GlobalOneWay.send(feature: GlobalFeature.self, .setBackgroundColor(.white))
+```
+## Examples
 
 <table>
   <tr>
     <td>
-      <a href="https://github.com/user-attachments/assets/bfbb7ea3-4d8d-45f0-bcbd-b659d93d0fe7">
+      <a href="https://github.com/fomagran/OneWayKitDemo/tree/main/OneWayKitDemo/ToDo">
         <img src="https://github.com/user-attachments/assets/bfbb7ea3-4d8d-45f0-bcbd-b659d93d0fe7" width="180" height="380">
-        <h4><a href="https://github.com/user-attachments/assets/bfbb7ea3-4d8d-45f0-bcbd-b659d93d0fe7">To Do Example </a></h4>
+        <h4><a href="https://github.com/fomagran/OneWayKitDemo/tree/main/OneWayKitDemo/ToDo">To Do Example </a></h4>
                 <p>This project allows you to add a To-Do List and learn how to detect child actions and update the parent view accordingly.</p>
       </a>
     </td>
     <td>
-      <a href="https://github.com/user-attachments/assets/777ff10a-027b-469b-ba81-647146c3bbb8">
+      <a href="https://github.com/fomagran/OneWayKitDemo/tree/main/OneWayKitDemo/Timer">
         <img src="https://github.com/user-attachments/assets/777ff10a-027b-469b-ba81-647146c3bbb8" width="180" height="380">
-        <h4><a href="https://github.com/user-attachments/assets/777ff10a-027b-469b-ba81-647146c3bbb8">Timer Example</a></h4>
+        <h4><a href="https://github.com/fomagran/OneWayKitDemo/tree/main/OneWayKitDemo/Timer">Timer Example</a></h4>
                 <p>This project allows you to learn how to implement a timer asynchronously using Middleware and handle cancellation of subscribed events.</p>
       </a>
     </td>
     <td>
-      <a href="https://github.com/user-attachments/assets/7df1dd91-a3d2-4e7d-8165-7a53430ec567">
+      <a href="https://github.com/fomagran/OneWayKitDemo/tree/main/OneWayKitDemo/Tracer">
         <img src="https://github.com/user-attachments/assets/7df1dd91-a3d2-4e7d-8165-7a53430ec567" width="180" height="380">
-        <h4><a href="https://github.com/user-attachments/assets/7df1dd91-a3d2-4e7d-8165-7a53430ec567">Tracer Example </a></h4>
+        <h4><a href="https://github.com/fomagran/OneWayKitDemo/tree/main/OneWayKitDemo/Tracer">Tracer Example </a></h4>
                 <p>This project allows you to learn how to detect triggered actions and track state changes accordingly.</p>
       </a>
     </td>
     <td>
-      <a href="https://github.com/user-attachments/assets/391a4e1a-c470-4f9b-8e27-9df4c5db4f2a">
+      <a href="https://github.com/fomagran/OneWayKitDemo/tree/main/OneWayKitDemo/Global">
         <img src="https://github.com/user-attachments/assets/391a4e1a-c470-4f9b-8e27-9df4c5db4f2a" width="180" height="380">
-        <h4><a href="https://github.com/user-attachments/assets/391a4e1a-c470-4f9b-8e27-9df4c5db4f2a">Global Example </a></h4>
+        <h4><a href="https://github.com/fomagran/OneWayKitDemo/tree/main/OneWayKitDemo/Global">Global Example </a></h4>
                 <p>This project allows you to create a global feature, subscribe to it from multiple views, and dispatch actions accordingly.</p>
       </a>
     </td>
   </tr>
 </table>
+
+## Installation
+
+You can install **OneWayKit** via [Swift Package Manager](https://swift.org/package-manager/) by adding the following line to your `Package.swift`:
+
+```swift
+import PackageDescription
+
+let package = Package(
+    [...]
+    dependencies: [
+        .package(url: "https: github.com/fomagran/OneWayKit", from: "1.2.0"),
+    ]
+)
+```
+
+## References
+The following projects have greatly inspired the creation of OneWayKit.
+
+- [Redux](https://github.com/facebook/flux](https://github.com/reduxjs/redux))
+- [ReactorKit](https://github.com/ReactorKit/ReactorKit)
+- [ReSwift](https://github.com/ReactorKit/ReactorKit](https://github.com/ReSwift/ReSwift))
+- [The Composable Architecture](https://github.com/pointfreeco/swift-composable-architecture)
+
+## Author
+
+Fomagran, fomagran@icloud.com
+
+## License
+
+This library is released under the MIT license. See [LICENSE](LICENSE) for details.
