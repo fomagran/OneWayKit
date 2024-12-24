@@ -18,7 +18,7 @@ The library is designed to be simple and easy to integrate into any feature of y
 - [Basic Usage](#basic-usage)
 - [Key Features](#key-features)
     1. [Tracer](#tracer)
-    2. [Globall](#global)
+    2. [Global](#global)
 - [Examples](#examples)
 - [Installation](#installation)
 - [References](#references)
