@@ -100,8 +100,11 @@ extension OneWay {
                 .receive(on: RunLoop.main)
                 .handleEvents(receiveCompletion: { [weak self] _ in
                     guard let self else { return }
-                    self.subscriptions.removeValue(forKey: "\(middleware) \(action)") }
-                )
+
+                    if subscriptions.keys.contains("\(middleware) \(action)") {
+                        self.subscriptions.removeValue(forKey: "\(middleware) \(action)")
+                    }
+                })
                 .sink { [weak self] in
                     if let action = $0 as? Feature.Action {
                         self?.send(action, shouldTrace: shouldTrace)
