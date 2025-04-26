@@ -61,9 +61,4 @@ public protocol ViewFeature {
     ///
     /// This function takes the current state and an action, and returns the new state.
     static var updater: Updater { get }
-    
-    /// An optional array of middleware to process actions and perform side effects.
-    ///
-    /// Middleware can be used for tasks such as logging, analytics, or asynchronous operations.
-    static var middlewares: [any Middleware]? { get }
 }

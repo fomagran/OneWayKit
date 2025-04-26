@@ -35,20 +35,27 @@ public final class OneWay<Feature: ViewFeature>: GlobalHandlable {
     /// A temporary holder for the next computed state before applying it.
     private var newState: Feature.State?
     
+    /// A list of middlewares handling side effects for actions.
+    private let middlewares: [Middleware]
+    
     /// A tracer to log state transitions and actions, aiding in debugging and analytics.
     public let tracer = Tracer()
     
     /// Contextual information for tracing, typically the calling class.
     private let context: AnyClass?
-    
+
     /// Initializes a `OneWay` instance with an initial state and optional context.
     ///
     /// - Parameters:
     ///   - initialState: The initial state of the feature.
     ///   - context: An optional context, such as the calling class, for tracing.
-    public init(initialState: Feature.State, context: AnyClass? = nil) {
+    ///   - middlewares:A list of middlewares handling side effects for actions.
+    public init(initialState: Feature.State,
+                context: AnyClass? = nil,
+                middlewares: [Middleware] = []) {
         self.subject = CurrentValueSubject<Feature.State, Never>(initialState)
         self.context = context
+        self.middlewares = middlewares
         self.observeSubject()
     }
     
@@ -95,7 +102,7 @@ extension OneWay {
         }
         
         // Process middlewares, if any, for additional side effects.
-        Feature.middlewares?.forEach { middleware in
+        middlewares.forEach { middleware in
             middleware.send(action, currentState: currentState)
                 .receive(on: RunLoop.main)
                 .handleEvents(receiveCompletion: { [weak self] _ in

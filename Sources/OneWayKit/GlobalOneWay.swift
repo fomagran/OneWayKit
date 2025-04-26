@@ -87,11 +87,11 @@ public final class GlobalOneWay: NSObject {
     /// - Parameters:
     ///   - feature: The feature type to register.
     ///   - initialState: The initial state of the feature.
-    public static func registerState<Feature: ViewFeature>(feature: Feature.Type, initialState: Feature.State) {
+    public static func registerState<Feature: ViewFeature>(feature: Feature.Type, initialState: Feature.State, middlewares: [Middleware] = []) {
         guard globalOneWays[String(describing: Feature.self)] == nil else {
             return
         }
         
-        globalOneWays[String(describing: Feature.self)] = OneWay<Feature>(initialState: initialState)
+        globalOneWays[String(describing: Feature.self)] = OneWay<Feature>(initialState: initialState, middlewares: middlewares)
     }
 }

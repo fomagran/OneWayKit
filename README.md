@@ -35,7 +35,6 @@ The library is designed to be simple and easy to integrate into any feature of y
 - State: Represents the state of the view.   
 - Action: Captures user interactions.   
 - Updater: Updates the state based on actions.   
-- Middleware: Handles asynchronous operations in between.
 
 ```swift
 struct TimerFeature: ViewFeature {
@@ -68,9 +67,6 @@ struct TimerFeature: ViewFeature {
         
         return newState
     }
-    
-    static var middlewares: [Middleware]? = [TimerMiddleware()]
-    
 }
 ```
 
@@ -118,12 +114,12 @@ final class TimerMiddleware: Middleware {
 }
 ```
 
-#### 2. Now, we use the previously defined ViewFeature to create a **OneWay** that represents the unidirectional flow of the view and set the initial state.
+#### 2. Now, we use the previously defined ViewFeature to create a **OneWay** that represents the unidirectional flow of the view, set the initial state, and inject middlewares for side effects.
 
 ```swift
 final class TimerViewController: UIViewController {
     
-    private let oneway = OneWay<TimerFeature>(initialState: .init())
+    private let oneway = OneWay<TimerFeature>(initialState: .init(), middlewares: [TimerMiddleWare()])
     ...
 ```
 #### 3. Subscribe to the state of OneWay to bind and update the UI accordingly when changes occur.
